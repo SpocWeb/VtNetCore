@@ -2,10 +2,10 @@
 {
     public enum ECharacterSize
     {
-        DoubleHeightLineTop,
-        DoubleHeightLineBottom,
-        SingleWidthLine,
-        DoubleWidthLine,
-        ScreenAlignmentTest
+        DoubleHeightLineTop = '3',
+        DoubleHeightLineBottom = '4',
+        SingleWidthLine='5',
+        DoubleWidthLine='6',
+        ScreenAlignmentTest='8'
     }
 }

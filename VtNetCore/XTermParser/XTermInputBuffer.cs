@@ -1,40 +1,23 @@
-﻿namespace VtNetCore.XTermParser
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
-    public class XTermInputBuffer
+namespace VtNetCore.XTermParser
+{
+	public class XTermInputBuffer
     {
         public byte [] Buffer { get; private set; }
 
-        private class StreamState
-        {
-            public int Position { get; set; }
-            public EMode Mode { get; set; }
-        }
+        private List<int> StateStack { get; set; } = new List<int>();
 
-        private List<StreamState> StateStack { get; set; } = new List<StreamState>();
-
-        public int Position { get; set; } = 0;
-
-        public enum EMode
-        {
-            Raw,
-            UTF8,
-            USASCII,
-            C0,
-            UK
-        };
-
-        public EMode Mode { get; set; } = EMode.UTF8;
+        public int Position { get; set; }
 
         public byte [] Stacked
         {
             get
             {
                 var first = StateStack.First();
-                return Buffer.Take(Position).Skip(first.Position).ToArray();
+                return Buffer.Take(Position).Skip(first).ToArray();
             }
         }
 
@@ -48,13 +31,7 @@
 
         public void PushState()
         {
-            StateStack.Add(
-                new StreamState
-                {
-                    Position = Position,
-                    Mode = Mode
-                }
-            );
+            StateStack.Add(Position);
         }
 
         public void PopState()
@@ -65,8 +42,7 @@
             var last = StateStack.Last();
             StateStack.RemoveAt(StateStack.Count - 1);
 
-            Position = last.Position;
-            Mode = last.Mode;
+            Position = last;
         }
 
         public void PopAllStates()
@@ -77,8 +53,7 @@
             var first = StateStack.First();
             StateStack.Clear();
 
-            Position = first.Position;
-            Mode = first.Mode;
+            Position = first;
         }
 
         public void RemoveTailState()
@@ -133,10 +108,10 @@
                 throw new IndexOutOfRangeException("Buffer does not contain enough data to process request");
 
             return Buffer[Position + skip];
-        }
+		}
 
-        public char Read(bool utf8=false)
-        {
+		public char Read(bool utf8=false)
+		{
             if(utf8)
                 return ReadUtf8();
             return ReadRaw();

@@ -1,40 +1,39 @@
-﻿namespace VtNetCore.XTermParser
-{
-    using System;
-    using System.Collections.Generic;
-    using VtNetCore.Exceptions;
-    using VtNetCore.VirtualTerminal.Enums;
-    using VtNetCore.XTermParser.SequenceType;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using VtNetCore.Exceptions;
+using VtNetCore.VirtualTerminal.Enums;
+using VtNetCore.XTermParser.SequenceType;
+// ReSharper disable InconsistentNaming
 
-    public class XTermSequenceReader
+namespace VtNetCore.XTermParser
+{
+	public static class XTermSequenceReader
     {
-        private static TerminalSequence ConsumeCSI(XTermInputBuffer stream)
+        private static TerminalSequence ConsumeCSI(this XTermInputBuffer stream)
         {
             stream.PushState();
 
             bool atStart = true;
-            bool isQuery = false;
-            bool isSend = false;
-            bool isBang = false;
-            bool isEquals = false;
+			TerminalSequence.Operator Op = 0;
             char? modifier = null;
 
             int currentParameter = -1;
             List<int> Parameters = new List<int>();
-            List<TerminalSequence> ProcesFirst = new List<TerminalSequence>();
+            List<TerminalSequence> ProcessFirst = new List<TerminalSequence>();
 
             while (true)
             {
                 var next = stream.Read();
 
                 if (atStart && next == '?')
-                    isQuery = true;
+					Op = TerminalSequence.Operator.Query;
                 else if (atStart && next == '>')
-                    isSend = true;
+					Op = TerminalSequence.Operator.Send;
                 else if (atStart && next == '!')
-                    isBang = true;
+					Op = TerminalSequence.Operator.Bang;
                 else if (atStart && next == '=')
-                    isEquals = true;
+					Op = TerminalSequence.Operator.Equals;
                 else if (next == ';')
                 {
                     if (currentParameter == -1)
@@ -71,7 +70,7 @@
                 else if (next == '\b' || next == '\r' || next == '\u000B')
                 {
                     // Trash chars that have to be processed before this sequence
-                    ProcesFirst.Add(
+                    ProcessFirst.Add(
                         new CharacterSequence
                         {
                             Character = next
@@ -88,18 +87,13 @@
                     if (currentParameter != -1)
                     {
                         Parameters.Add(currentParameter);
-                        currentParameter = -1;
                     }
 
-                    var csi = new CsiSequence
+                    var csi = new CsiSequence(Op)
                     {
                         Parameters = Parameters,
-                        IsQuery = isQuery,
-                        IsSend = isSend,
-                        IsBang = isBang,
-                        IsEquals = isEquals,
-                        Command = (modifier.HasValue ? modifier.Value.ToString() : "") + next.ToString(),
-                        ProcessFirst = ProcesFirst.Count > 0 ? ProcesFirst : null
+                        Command = (modifier.HasValue ? modifier.Value.ToString() : "") + next,
+                        ProcessFirst = ProcessFirst.Count > 0 ? ProcessFirst : null
                     };
 
                     stream.Commit();
@@ -111,16 +105,14 @@
             }
         }
 
-        private static TerminalSequence ConsumeOSC(XTermInputBuffer stream)
+        private static TerminalSequence ConsumeOSC(this XTermInputBuffer stream)
         {
             stream.PushState();
 
             string command = "";
             bool readingCommand = false;
             bool atStart = true;
-            bool isQuery = false;
-            bool isSend = false;
-            bool isBang = false;
+			TerminalSequence.Operator Op = 0;
             char? modifier = null;
 
             int currentParameter = -1;
@@ -130,16 +122,12 @@
             {
                 var next = stream.Read();
 
-                if (readingCommand)
-                {
-                    if (next == 0x07 || next == 0x9C)        // BEL or ST
+                if (readingCommand) {
+					if (next == 0x07 || next == 0x9C)        // BEL or ST
                     {
-                        var osc = new OscSequence
+                        var osc = new OscSequence(Op)
                         {
                             Parameters = Parameters,
-                            IsQuery = isQuery,
-                            IsSend = isSend,
-                            IsBang = isBang,
                             Command = command
                         };
 
@@ -149,19 +137,16 @@
 
                         return osc;
                     }
-                    else
-                    {
-                        command += next;
-                    }
-                }
+					command += next;
+				}
                 else
                 {
                     if (atStart && next == '?')
-                        isQuery = true;
+                        Op = TerminalSequence.Operator.Query;
                     else if (atStart && next == '>')
-                        isSend = true;
+                        Op = TerminalSequence.Operator.Send;
                     else if (atStart && next == '!')
-                        isBang = true;
+                        Op = TerminalSequence.Operator.Bang;
                     else if (next == ';')
                     {
                         if (currentParameter == -1)
@@ -206,11 +191,11 @@
             }
         }
 
-        private static TerminalSequence ConsumeCompliance(XTermInputBuffer stream)
+        private static TerminalSequence ConsumeCompliance(this XTermInputBuffer stream)
         {
             var next = stream.Read();
 
-            var compliance = new OscSequence
+            var compliance = new OscSequence(0)
             {
                 Command = next.ToString()
             };
@@ -222,7 +207,7 @@
             return compliance;
         }
 
-        private static TerminalSequence ConsumeCharacterSize(XTermInputBuffer stream)
+        private static TerminalSequence ConsumeCharacterSize(this XTermInputBuffer stream)
         {
             var next = stream.Read();
 
@@ -259,7 +244,7 @@
             return characterSize;
         }
 
-        private static TerminalSequence ConsumeUnicode(XTermInputBuffer stream)
+        private static TerminalSequence ConsumeUnicode(this XTermInputBuffer stream)
         {
             var next = stream.Read();
 
@@ -275,140 +260,138 @@
             return unicode;
         }
 
-        private static TerminalSequence ConsumeCharacterSet(char set, XTermInputBuffer stream)
+        private static TerminalSequence ConsumeCharacterSet(char charSetMode, XTermInputBuffer stream)
         {
             var next = stream.Read();
-
-            ECharacterSetMode mode;
-            switch (set)
-            {
-                case '(':
-                default:
-                    mode = ECharacterSetMode.IsoG0;
-                    break;
-
-                case ')':
-                    mode = ECharacterSetMode.IsoG1;
-                    break;
-
-                case '*':
-                    mode = ECharacterSetMode.IsoG2;
-                    break;
-
-                case '+':
-                    mode = ECharacterSetMode.IsoG3;
-                    break;
-
-                case '-':
-                    mode = ECharacterSetMode.Vt300G1;
-                    break;
-
-                case '.':
-                    mode = ECharacterSetMode.Vt300G2;
-                    break;
-
-                case '/':
-                    mode = ECharacterSetMode.Vt300G3;
-                    break;
-            }
-
-            ECharacterSet characterSet;
-            switch (next)
-            {
-                case '0':
-                    characterSet = ECharacterSet.C0;
-                    break;
-                case '1':
-                    characterSet = ECharacterSet.C1;
-                    break;
-                case '2':
-                    characterSet = ECharacterSet.C2;
-                    break;
-                case 'A':
-                    characterSet = ECharacterSet.Latin1;
-                    break;
-                case '4':
-                    characterSet = ECharacterSet.Dutch;
-                    break;
-                case 'C':
-                case '5':
-                    characterSet = ECharacterSet.Finnish;
-                    break;
-                case 'R':
-                    characterSet = ECharacterSet.French;
-                    break;
-                case 'Q':
-                    characterSet = ECharacterSet.FrenchCanadian;
-                    break;
-                case 'K':
-                    characterSet = ECharacterSet.German;
-                    break;
-                case 'Y':
-                    characterSet = ECharacterSet.Italian;
-                    break;
-                case 'E':
-                case '6':
-                case '`':
-                    characterSet = ECharacterSet.NorwegianDanish;
-                    break;
-                case 'Z':
-                    characterSet = ECharacterSet.Spanish;
-                    break;
-                case 'H':
-                case '7':
-                    characterSet = ECharacterSet.Swedish;
-                    break;
-                case '=':
-                    characterSet = ECharacterSet.Swiss;
-                    break;
-
-                case '>':
-                    characterSet = ECharacterSet.DecTechnical;
-                    break;
-
-                case '<':
-                    characterSet = ECharacterSet.DecSupplemental;
-                    break;
-
-                case '%':
-                    var num = stream.Read();
-                    switch (num)
-                    {
-                        case '5':
-                            characterSet = ECharacterSet.DecSupplementalGraphic;
-                            break;
-                        case '6':
-                            characterSet = ECharacterSet.Portuguese;
-                            break;
-                        default:
-                            characterSet = ECharacterSet.USASCII;
-                            break;
-                    }
-                    break;
-
-                default:
-                    characterSet = ECharacterSet.USASCII;
-                    break;
-
-                case 'B':
-                    characterSet = ECharacterSet.USASCII;
-                    break;
-            }
-
-            stream.Commit();
-
             var characterSetSequence = new CharacterSetSequence
             {
-                CharacterSet = characterSet,
-                Mode = mode
+                Mode = AsECharSetMode(charSetMode),
+                CharacterSet = AsECharSet(next, stream.ReadRaw)
             };
-
-            //System.Diagnostics.Debug.WriteLine(characterSetSequence.ToString());
-
+			stream.Commit();
             return characterSetSequence;
         }
 
-        private static TerminalSequence ConsumeEscapeSequence(XTermInputBuffer stream)
+		static ECharacterSet AsECharSet(char charSet, Func<char> read) {
+			ECharacterSet characterSet;
+			switch (charSet) {
+				case '0':
+					characterSet = ECharacterSet.C0;
+					break;
+				case '1':
+					characterSet = ECharacterSet.C1;
+					break;
+				case '2':
+					characterSet = ECharacterSet.C2;
+					break;
+				case 'A':
+					characterSet = ECharacterSet.Latin1;
+					break;
+				case '4':
+					characterSet = ECharacterSet.Dutch;
+					break;
+				case 'C':
+				case '5':
+					characterSet = ECharacterSet.Finnish;
+					break;
+				case 'R':
+					characterSet = ECharacterSet.French;
+					break;
+				case 'Q':
+					characterSet = ECharacterSet.FrenchCanadian;
+					break;
+				case 'K':
+					characterSet = ECharacterSet.German;
+					break;
+				case 'Y':
+					characterSet = ECharacterSet.Italian;
+					break;
+				case 'E':
+				case '6':
+				case '`':
+					characterSet = ECharacterSet.NorwegianDanish;
+					break;
+				case 'Z':
+					characterSet = ECharacterSet.Spanish;
+					break;
+				case 'H':
+				case '7':
+					characterSet = ECharacterSet.Swedish;
+					break;
+				case '=':
+					characterSet = ECharacterSet.Swiss;
+					break;
+
+				case '>':
+					characterSet = ECharacterSet.DecTechnical;
+					break;
+
+				case '<':
+					characterSet = ECharacterSet.DecSupplemental;
+					break;
+
+				case '%':
+					var num = read();
+					switch (num) {
+						case '5':
+							characterSet = ECharacterSet.DecSupplementalGraphic;
+							break;
+						case '6':
+							characterSet = ECharacterSet.Portuguese;
+							break;
+						default:
+							characterSet = ECharacterSet.UsAscii;
+							break;
+					}
+					break;
+
+				default:
+					characterSet = ECharacterSet.UsAscii;
+					break;
+
+				case 'B':
+					characterSet = ECharacterSet.UsAscii;
+					break;
+			}
+			return characterSet;
+		}
+
+		static ECharacterSetMode AsECharSetMode(char set) {
+			ECharacterSetMode mode;
+			switch (set) {
+				case '(':
+				default:
+					mode = ECharacterSetMode.IsoG0;
+					break;
+
+				case ')':
+					mode = ECharacterSetMode.IsoG1;
+					break;
+
+				case '*':
+					mode = ECharacterSetMode.IsoG2;
+					break;
+
+				case '+':
+					mode = ECharacterSetMode.IsoG3;
+					break;
+
+				case '-':
+					mode = ECharacterSetMode.Vt300G1;
+					break;
+
+				case '.':
+					mode = ECharacterSetMode.Vt300G2;
+					break;
+
+				case '/':
+					mode = ECharacterSetMode.Vt300G3;
+					break;
+			}
+			return mode;
+		}
+
+		private static TerminalSequence ConsumeEscapeSequence(this XTermInputBuffer stream)
         {
             stream.PushState();
             var next = stream.Read();
@@ -451,7 +434,7 @@
 
                     stream.Commit();
 
-                    System.Diagnostics.Debug.WriteLine(vt52mc.ToString());
+                    Debug.WriteLine(vt52mc.ToString());
                     return vt52mc;
 
                 default:
@@ -467,7 +450,7 @@
             }
         }
 
-        private static TerminalSequence ConsumeSS2Sequence(XTermInputBuffer stream)
+        private static TerminalSequence ConsumeSS2Sequence(this XTermInputBuffer stream)
         {
             var next = stream.ReadRaw();
 
@@ -482,7 +465,7 @@
             return ss2;
         }
 
-        private static TerminalSequence ConsumeSS3Sequence(XTermInputBuffer stream)
+        private static TerminalSequence ConsumeSS3Sequence(this XTermInputBuffer stream)
         {
             var next = stream.ReadRaw();
 
@@ -497,16 +480,14 @@
             return ss3;
         }
 
-        private static TerminalSequence ConsumeDeviceControlStringSequence(XTermInputBuffer stream)
+        private static TerminalSequence ConsumeDeviceControlStringSequence(this XTermInputBuffer stream)
         {
             stream.PushState();
 
             string command = "";
             bool readingCommand = false;
             bool atStart = true;
-            bool isQuery = false;
-            bool isSend = false;
-            bool isBang = false;
+			TerminalSequence.Operator Op = 0;
             char? modifier = null;
 
             int currentParameter = -1;
@@ -516,16 +497,12 @@
             {
                 var next = stream.Read();
 
-                if (readingCommand)
-                {
-                    if (next == 0x07 || next == 0x9C)        // BEL or ST
+                if (readingCommand) {
+					if (next == 0x07 || next == 0x9C)        // BEL or ST
                     {
-                        var dcs = new DcsSequence
+                        var dcs = new DcsSequence(Op)
                         {
                             Parameters = Parameters,
-                            IsQuery = isQuery,
-                            IsSend = isSend,
-                            IsBang = isBang,
                             Command = (modifier.HasValue ? modifier.Value.ToString() : "") + command
                         };
 
@@ -535,42 +512,35 @@
 
                         return dcs;
                     }
-                    else if(next == 0x1B)               // ESC
-                    {
-                        var stChar = stream.Read();
-                        if(stChar == '\\')
-                        {
-                            var dcs = new DcsSequence
-                            {
-                                Parameters = Parameters,
-                                IsQuery = isQuery,
-                                IsSend = isSend,
-                                IsBang = isBang,
-                                Command = (modifier.HasValue ? modifier.Value.ToString() : "") + command
-                            };
+					if(next == 0x1B)               // ESC
+					{
+						var stChar = stream.Read();
+						if(stChar == '\\')
+						{
+							var dcs = new DcsSequence(Op)
+							{
+								Parameters = Parameters,
+								Command = (modifier.HasValue ? modifier.Value.ToString() : "") + command
+							};
 
-                            stream.Commit();
+							stream.Commit();
 
-                            //System.Diagnostics.Debug.WriteLine(dcs.ToString());
+							//System.Diagnostics.Debug.WriteLine(dcs.ToString());
 
-                            return dcs;
-                        }
-                        else
-                            throw new EscapeSequenceException("ESC \\ is needed to terminate DCS. Encounterd wrong character.", stream.Stacked);
-                    }
-                    else
-                    {
-                        command += next;
-                    }
-                }
+							return dcs;
+						}
+						throw new EscapeSequenceException("ESC \\ is needed to terminate DCS. Encounterd wrong character.", stream.Stacked);
+					}
+					command += next;
+				}
                 else
                 {
                     if (atStart && next == '?')
-                        isQuery = true;
+                        Op = TerminalSequence.Operator.Query;
                     else if (atStart && next == '>')
-                        isSend = true;
+                        Op = TerminalSequence.Operator.Send;
                     else if (atStart && next == '!')
-                        isBang = true;
+                        Op = TerminalSequence.Operator.Bang;
                     else if (next == ';')
                     {
                         if (currentParameter == -1)
@@ -579,14 +549,12 @@
                         Parameters.Add(currentParameter);
                         currentParameter = -1;
                     }
-                    else if (char.IsDigit(next))
-                    {
-                        atStart = false;
-                        if (currentParameter == -1)
-                            currentParameter = Convert.ToInt32(next - '0');
-                        else
-                            currentParameter = (currentParameter * 10) + Convert.ToInt32(next - '0');
-                    }
+                    else if (char.IsDigit(next)) {
+						atStart = false;
+						currentParameter = currentParameter == -1
+							? Convert.ToInt32(next - '0')
+							: (currentParameter * 10) + Convert.ToInt32(next - '0');
+					}
                     else if (next == '$' || next == '"' || next == ' ')
                     {
                         if (modifier.HasValue)
@@ -616,46 +584,28 @@
 
             stream.PopState();
             return null;
-        }
+		}
 
-        public static TerminalSequence ConsumeNextSequence(XTermInputBuffer stream, bool utf8)
-        {
+		public static TerminalSequence ConsumeNextSequence(this XTermInputBuffer stream, bool utf8)
+		{
+			var nextSequence = stream._ConsumeNextSequence(utf8);
+			stream.Commit();
+			return nextSequence;
+		}
+
+		static TerminalSequence _ConsumeNextSequence(this XTermInputBuffer stream, bool utf8)
+		{
             stream.PushState();
             var next = stream.Read(utf8);
-
-            TerminalSequence sequence = null;
             switch (next)
             {
-                case '\u001b':      // ESC
-                    sequence = ConsumeEscapeSequence(stream);
-                    break;
-
-                case '\u008e':      // SS2
-                    sequence = ConsumeSS2Sequence(stream);
-                    break;
-
-                case '\u008f':      // SS3
-                    sequence = ConsumeSS3Sequence(stream);
-                    break;
-
-                case '\u0090':      // DCS
-                    sequence = ConsumeDeviceControlStringSequence(stream);
-                    break;
-
-                default:
-                    break;
+                case '\u001b': return ConsumeEscapeSequence(stream); // ESC
+                case '\u008e': return ConsumeSS2Sequence(stream); // SS2
+                case '\u008f': return ConsumeSS3Sequence(stream); // SS3
+                case '\u0090': return ConsumeDeviceControlStringSequence(stream); // DCS
+                default: return new CharacterSequence { Character = next };
             }
 
-            if (sequence == null)
-            {
-                sequence = new CharacterSequence
-                {
-                    Character = next
-                };
-                stream.Commit();
-            }
-
-            return sequence;
         }
     }
 }

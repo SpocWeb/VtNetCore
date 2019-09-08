@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VtNetCore.VirtualTerminal.Enums;
 
 namespace VtNetCore.VirtualTerminal.Encodings
@@ -40,7 +38,7 @@ namespace VtNetCore.VirtualTerminal.Encodings
             { '{', '\u03C0' }, // 7/11 - U+03C0 # GREEK SMALL LETTER PI
             { '|', '\u2260' }, // 7/12 - U+2260 # NOT EQUAL TO
             { '}', '\u00A3' }, // 7/13 - U+00A3 # POUND SIGN
-            { '~', '\u00B7' }, // 7/14 - U+00B7 # MIDDLE DOT
+            { '~', '\u00B7' } // 7/14 - U+00B7 # MIDDLE DOT
         };
 
         public static readonly Dictionary<char, char> Latin1 = new Dictionary<char, char>
@@ -151,7 +149,7 @@ namespace VtNetCore.VirtualTerminal.Encodings
             { '{', 'ä' },
             { '|', 'ö' },
             { '}', 'å' },
-            { '~', 'ü' },
+            { '~', 'ü' }
         };
 
         public static readonly Dictionary<char, char> French = new Dictionary<char, char>
@@ -163,7 +161,7 @@ namespace VtNetCore.VirtualTerminal.Encodings
             { '{', 'é' },
             { '|', 'ù' },
             { '}', 'è' },
-            { '~', '¨' },
+            { '~', '¨' }
         };
 
         public static readonly Dictionary<char, char> FrenchCanadian = new Dictionary<char, char>
@@ -177,7 +175,7 @@ namespace VtNetCore.VirtualTerminal.Encodings
             { '`', 'ô' },
             { '|', 'ù' },
             { '}', 'è' },
-            { '~', 'û' },
+            { '~', 'û' }
         };
 
         public static readonly Dictionary<char, char> German = new Dictionary<char, char>
@@ -189,7 +187,7 @@ namespace VtNetCore.VirtualTerminal.Encodings
             { '{', 'ä' },
             { '|', 'ö' },
             { '}', 'ü' },
-            { '~', 'β' },
+            { '~', 'β' }
         };
 
         public static readonly Dictionary<char, char> Italian = new Dictionary<char, char>
@@ -203,7 +201,7 @@ namespace VtNetCore.VirtualTerminal.Encodings
             { '{', 'à' },
             { '|', 'ò' },
             { '}', 'è' },
-            { '~', 'ì' },
+            { '~', 'ì' }
         };
 
         public static readonly Dictionary<char, char> NorwegianDanish = new Dictionary<char, char>
@@ -213,7 +211,7 @@ namespace VtNetCore.VirtualTerminal.Encodings
             { ']', 'Å' },
             { '{', 'æ' },
             { '|', 'ø' },
-            { '}', 'å' },
+            { '}', 'å' }
         };
 
         public static readonly Dictionary<char, char> Portuguese = new Dictionary<char, char>
@@ -223,7 +221,7 @@ namespace VtNetCore.VirtualTerminal.Encodings
             { ']', 'Õ' },
             { '{', 'ã' },
             { '|', 'ç' },
-            { '}', 'õ' },
+            { '}', 'õ' }
         };
 
         public static readonly Dictionary<char, char> Spanish = new Dictionary<char, char>
@@ -235,7 +233,7 @@ namespace VtNetCore.VirtualTerminal.Encodings
             { ']', '¿' },
             { '{', '°' },
             { '|', 'ñ' },
-            { '}', 'ç' },
+            { '}', 'ç' }
         };
 
         public static readonly Dictionary<char, char> DecTechnical = new Dictionary<char, char>
@@ -317,7 +315,7 @@ namespace VtNetCore.VirtualTerminal.Encodings
             { (char)0x7B, '\u2190' },
             { (char)0x7C, '\u2191' },
             { (char)0x7D, '\u2192' },
-            { (char)0x7E, '\u2193' },
+            { (char)0x7E, '\u2193' }
         };
 
         public static char DecodeChar(char inChar, ECharacterSet characterSet, bool nationalReplacementCharacterSet)

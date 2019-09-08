@@ -5,7 +5,10 @@
         public char Character { get; set; }
         public override string ToString()
         {
-            return "Character - '" + Character.ToString() + "' [" + ((int)Character).ToString("X2") + "]";
+            return "Character - '" + Character + "' [" + ((int)Character).ToString("X2") + "]";
         }
-    }
+
+		public CharacterSequence(Operator op = 0) : base(op) { }
+
+	}
 }

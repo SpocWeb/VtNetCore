@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Text.RegularExpressions;
 using VtNetCore.VirtualTerminal.Enums;
 
@@ -317,7 +316,7 @@ namespace VtNetCore.VirtualTerminal.Model
             { 252, new TerminalColor("#d0d0d0") }, // Grey82
             { 253, new TerminalColor("#dadada") }, // Grey85
             { 254, new TerminalColor("#e4e4e4") }, // Grey89
-            { 255, new TerminalColor("#eeeeee") }, // Grey93
+            { 255, new TerminalColor("#eeeeee") } // Grey93
         };
 
         public uint Red

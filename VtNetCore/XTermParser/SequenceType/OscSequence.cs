@@ -6,5 +6,8 @@
         {
             return "OSC - " + base.ToString();
         }
-    }
+
+		public OscSequence(Operator op) : base(op) { }
+
+	}
 }

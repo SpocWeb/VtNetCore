@@ -2,7 +2,10 @@
 {
     public class DcsSequence : TerminalSequence
     {
-        public override string ToString()
+
+		public DcsSequence(Operator op) : base(op) { }
+
+		public override string ToString()
         {
             return "DCS - " + base.ToString();
         }

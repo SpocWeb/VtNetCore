@@ -1,8 +1,8 @@
-﻿namespace VtNetCore.VirtualTerminal.Model
-{
-    using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-    /// <summary>
+namespace VtNetCore.VirtualTerminal.Model
+{
+	/// <summary>
     /// A collection of all the lines in the buffer.
     /// </summary>
     public class TerminalLines : List<TerminalLine>

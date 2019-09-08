@@ -2,8 +2,13 @@
 {
     public enum ECursorShape
     {
-        Block,
-        Underline,
-        Bar
+		/// <summary> Full Height </summary>
+        Block = 100,
+
+		/// <summary> Very thin </summary>
+        Underline = 10,
+
+		/// <summary> (Bottom) Bar </summary>
+        Bar = 30
     }
 }

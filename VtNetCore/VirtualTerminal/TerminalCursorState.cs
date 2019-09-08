@@ -1,11 +1,11 @@
-﻿namespace VtNetCore.VirtualTerminal
-{
-    using System.Collections.Generic;
-    using System.Linq;
-    using VtNetCore.VirtualTerminal.Enums;
-    using VtNetCore.VirtualTerminal.Model;
+﻿using System.Collections.Generic;
+using System.Linq;
+using VtNetCore.VirtualTerminal.Enums;
+using VtNetCore.VirtualTerminal.Model;
 
-    /// <summary>
+namespace VtNetCore.VirtualTerminal
+{
+	/// <summary>
     /// The current cursor state as known by the controller
     /// </summary>
     public class TerminalCursorState
@@ -13,12 +13,12 @@
         /// <summary>
         ///  The current column of the cursor.
         /// </summary>
-        public int CurrentColumn { get; set; } = 0;
+        public int CurrentColumn { get; set; }
 
         /// <summary>
         /// The current row of the cursor relative to the top of the visible screen, not the buffer.
         /// </summary>
-        public int CurrentRow { get; set; } = 0;
+        public int CurrentRow { get; set; }
 
         public TextPosition Position {
             get { return new TextPosition { Column = CurrentColumn, Row = CurrentRow }; }
@@ -28,7 +28,7 @@
         /// <summary>
         /// Set to true when in application mode
         /// </summary>
-        public bool ApplicationCursorKeysMode { get; set; } = false;
+        public bool ApplicationCursorKeysMode { get; set; }
 
         /// <summary>
         /// The current drawing attribute for text.
@@ -66,17 +66,17 @@
         /// <summary>
         /// Set to true if the entire screen should invert foreground and background colors
         /// </summary>
-        public bool ReverseVideoMode = false;
+        public bool ReverseVideoMode;
 
         /// <summary>
         /// Specifies whether the coordinate system is relative to the currently configured scrolling region
         /// </summary>
-        public bool OriginMode = false;
+        public bool OriginMode;
 
         /// <summary>
         /// Specifies whether the terminal should auto insert or replace text on the screen.
         /// </summary>
-        public EInsertReplaceMode InsertMode = EInsertReplaceMode.Replace;
+        public bool IsReplaceMode = true;
 
         /// <summary>
         /// Flags whether the current character set is meant to be read as Utf8
@@ -101,37 +101,37 @@
         /// <summary>
         /// The configured character set for the G0 page
         /// </summary>
-        public ECharacterSet G0 { get; set; } = ECharacterSet.USASCII;
+        public ECharacterSet G0 { get; set; } = ECharacterSet.UsAscii;
 
         /// <summary>
         /// The configured character set for the G1 page
         /// </summary>
-        public ECharacterSet G1 { get; set; } = ECharacterSet.USASCII;
+        public ECharacterSet G1 { get; set; } = ECharacterSet.UsAscii;
 
         /// <summary>
         /// The configured character set for the G2 page
         /// </summary>
-        public ECharacterSet G2 { get; set; } = ECharacterSet.USASCII;
+        public ECharacterSet G2 { get; set; } = ECharacterSet.UsAscii;
 
         /// <summary>
         /// The configured character set for the G3 page
         /// </summary>
-        public ECharacterSet G3 { get; set; } = ECharacterSet.USASCII;
+        public ECharacterSet G3 { get; set; } = ECharacterSet.UsAscii;
 
         /// <summary>
         /// The configured character set for the Vt300 G1 page
         /// </summary>
-        public ECharacterSet Vt300G1 { get; set; } = ECharacterSet.USASCII;
+        public ECharacterSet Vt300G1 { get; set; } = ECharacterSet.UsAscii;
 
         /// <summary>
         /// The configured character set for the Vt300 G2 page
         /// </summary>
-        public ECharacterSet Vt300G2 { get; set; } = ECharacterSet.USASCII;
+        public ECharacterSet Vt300G2 { get; set; } = ECharacterSet.UsAscii;
 
         /// <summary>
         /// The configured character set for the Vt300 G3 page
         /// </summary>
-        public ECharacterSet Vt300G3 { get; set; } = ECharacterSet.USASCII;
+        public ECharacterSet Vt300G3 { get; set; } = ECharacterSet.UsAscii;
 
         /// <summary>
         /// Sets the VT-52 alternate keypad mode
@@ -174,7 +174,7 @@
                 WordWrap = WordWrap,
                 ReverseVideoMode = ReverseVideoMode,
                 OriginMode = OriginMode,
-                InsertMode = InsertMode,
+                IsReplaceMode = IsReplaceMode,
                 ShowCursor = ShowCursor,
                 BlinkingCursor = BlinkingCursor,
                 CursorShape = CursorShape,
@@ -203,33 +203,33 @@
         public override string ToString()
         {
             return
-                "CurrentColumn: " + CurrentColumn.ToString() + "\n" +
-                "CurrentRow:" + CurrentRow.ToString() + "\n" +
-                "ApplicationCursorKeysMode:" + ApplicationCursorKeysMode.ToString() + "\n" +
-                "Attribute:\n" + Attributes.ToString() + "\n" +
+                "CurrentColumn: " + CurrentColumn + "\n" +
+                "CurrentRow:" + CurrentRow + "\n" +
+                "ApplicationCursorKeysMode:" + ApplicationCursorKeysMode + "\n" +
+                "Attribute:\n" + Attributes + "\n" +
                 "TabStops:" + string.Join(",", TabStops.Select(x => x.ToString()).ToList()) + "\n" +
-                "WordWrap:" + WordWrap.ToString() + "\n" +
-                "ReverseVideoMode:" + ReverseVideoMode.ToString() + "\n" +
-                "OriginMode:" + OriginMode.ToString() + "\n" +
-                "InsertMode:" + InsertMode.ToString() + "\n" +
-                "ShowCursor:" + ShowCursor.ToString() + "\n" +
-                "BlinkingCursor:" + BlinkingCursor.ToString() + "\n" +
-                "CursorShape:" + CursorShape.ToString() + "\n" + 
-                "Utf8:" + Utf8.ToString() + "\n" +
-                "CharacterSetMode:" + CharacterSetMode.ToString() + "\n" +
-                "G0:" + G0.ToString() + "\n" +
-                "G1:" + G1.ToString() + "\n" +
-                "G2:" + G2.ToString() + "\n" +
-                "G3:" + G3.ToString() + "\n" +
-                "Vt300G1:" + Vt300G1.ToString() + "\n" +
-                "Vt300G2:" + Vt300G2.ToString() + "\n" +
-                "Vt300G3:" + Vt300G3.ToString() + "\n" +
-                "Vt52AlternateKeypad: " + Vt52AlternateKeypad.ToString() + "\n" + 
-                "Vt52GraphicsMode: " + Vt52GraphicsMode.ToString() + "\n" + 
-                "AutomaticNewLine:" + AutomaticNewLine.ToString() + "\n" +
-                "ConfiguredColumns:" + ConfiguredColumns.ToString() + "\n" +
-                "National Character Replacement Mode:" + NationalCharacterReplacementMode.ToString() + "\n" +
-                "Single shift character mode:" + SingleShiftSelectCharacterMode.ToString() + "\n"
+                "WordWrap:" + WordWrap + "\n" +
+                "ReverseVideoMode:" + ReverseVideoMode + "\n" +
+                "OriginMode:" + OriginMode + "\n" +
+                "InsertMode:" + IsReplaceMode.ToString() + "\n" +
+                "ShowCursor:" + ShowCursor + "\n" +
+                "BlinkingCursor:" + BlinkingCursor + "\n" +
+                "CursorShape:" + CursorShape + "\n" + 
+                "Utf8:" + Utf8 + "\n" +
+                "CharacterSetMode:" + CharacterSetMode + "\n" +
+                "G0:" + G0 + "\n" +
+                "G1:" + G1 + "\n" +
+                "G2:" + G2 + "\n" +
+                "G3:" + G3 + "\n" +
+                "Vt300G1:" + Vt300G1 + "\n" +
+                "Vt300G2:" + Vt300G2 + "\n" +
+                "Vt300G3:" + Vt300G3 + "\n" +
+                "Vt52AlternateKeypad: " + Vt52AlternateKeypad + "\n" + 
+                "Vt52GraphicsMode: " + Vt52GraphicsMode + "\n" + 
+                "AutomaticNewLine:" + AutomaticNewLine + "\n" +
+                "ConfiguredColumns:" + ConfiguredColumns + "\n" +
+                "National Character Replacement Mode:" + NationalCharacterReplacementMode + "\n" +
+                "Single shift character mode:" + SingleShiftSelectCharacterMode + "\n"
                 ;
         }
     }

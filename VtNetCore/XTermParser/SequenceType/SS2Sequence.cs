@@ -6,5 +6,8 @@
         {
             return "SSs - " + base.ToString();
         }
-    }
+
+		public SS2Sequence() : base(0) { }
+
+	}
 }

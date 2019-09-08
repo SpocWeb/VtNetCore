@@ -1,8 +1,8 @@
-﻿namespace VtNetCore.VirtualTerminal
-{
-    using System;
+﻿using System;
 
-    /// <summary>
+namespace VtNetCore.VirtualTerminal
+{
+	/// <summary>
     /// Argument data structure for processing bytes to be transmitted
     /// </summary>
     public class SendDataEventArgs : EventArgs

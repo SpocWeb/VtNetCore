@@ -2,7 +2,10 @@
 {
     public class CsiSequence : TerminalSequence
     {
-        public override string ToString()
+
+		public CsiSequence(Operator op) : base(op) { }
+
+		public override string ToString()
         {
             return "CSI - " + base.ToString();
         }

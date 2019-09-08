@@ -1,8 +1,8 @@
-﻿namespace VtNetCore.VirtualTerminal
-{
-    using System;
+﻿using System;
 
-    public class TextPosition : IEquatable<TextPosition>
+namespace VtNetCore.VirtualTerminal
+{
+	public class TextPosition : IEquatable<TextPosition>
     {
         public int Column { get; set; }
 
@@ -148,7 +148,7 @@
 
         public override string ToString()
         {
-            return "(c:" + Column.ToString() + ",r:" + Row.ToString() + ")";
+            return "(c:" + Column + ",r:" + Row + ")";
         }
     }
 }

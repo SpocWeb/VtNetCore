@@ -1,8 +1,8 @@
-﻿namespace VtNetCore.VirtualTerminal.Model
-{
-    using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-    /// <summary>
+namespace VtNetCore.VirtualTerminal.Model
+{
+	/// <summary>
     /// A single line of text within the terminal
     /// </summary>
     public class TerminalLine : List<TerminalCharacter>

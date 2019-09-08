@@ -6,7 +6,10 @@
         public int Column { get; set; }
         public override string ToString()
         {
-            return "VT52 Move Cursor (r=" + Row.ToString() + ",c=" + Column.ToString() + ")";
+            return "VT52 Move Cursor (r=" + Row + ",c=" + Column + ")";
         }
-    }
+
+		public Vt52MoveCursorSequence(Operator op = 0) : base(op) { }
+
+	}
 }

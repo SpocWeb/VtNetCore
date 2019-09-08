@@ -1,9 +1,8 @@
-﻿namespace VtNetCore.VirtualTerminal
-{
-    using VtNetCore.VirtualTerminal.Enums;
-    using VtNetCore.XTermParser;
+﻿using VtNetCore.VirtualTerminal.Enums;
 
-    /// <summary>
+namespace VtNetCore.VirtualTerminal
+{
+	/// <summary>
     /// Provides the interfaces needed by a terminal in order to manipulate the model.
     /// </summary>
     public interface IVirtualTerminalController
@@ -110,7 +109,7 @@
         void SetEndOfGuardedArea();
         void SetErasureMode(bool enabled);
         void SetGuardedAreaTransferMode(bool enabled);
-        void SetInsertReplaceMode(EInsertReplaceMode mode);
+        void SetReplaceMode(bool replaceMode);
         void SetIso8613PaletteBackground(int paletteEntry);
         void SetIso8613PaletteForeground(int paletteEntry);
         void SetLatin1();

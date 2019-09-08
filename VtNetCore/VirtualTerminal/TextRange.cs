@@ -1,8 +1,8 @@
-﻿namespace VtNetCore.VirtualTerminal
-{
-    using System;
+﻿using System;
 
-    public class TextRange : IEquatable<TextRange>
+namespace VtNetCore.VirtualTerminal
+{
+	public class TextRange : IEquatable<TextRange>
     {
         public TextPosition Start { get; set; } = new TextPosition();
         public TextPosition End { get; set; } = new TextPosition();
@@ -70,7 +70,7 @@
 
         public override string ToString()
         {
-            return Start.ToString() + "-" + End.ToString();
+            return Start + "-" + End;
         }
 
         public TextPosition TopLeft
@@ -85,14 +85,11 @@
                         Row = Math.Min(Start.Row, End.Row)
                     };
                 }
-                else
-                {
-                    if (Start <= End)
-                        return Start;
+				if (Start <= End)
+					return Start;
 
-                    return End;
-                }
-            }
+				return End;
+			}
         }
 
         public TextPosition BottomRight
@@ -107,14 +104,11 @@
                         Row = Math.Max(Start.Row, End.Row)
                     };
                 }
-                else
-                {
-                    if (Start >= End)
-                        return Start;
+				if (Start >= End)
+					return Start;
 
-                    return End;
-                }
-            }
+				return End;
+			}
         }
     }
 }

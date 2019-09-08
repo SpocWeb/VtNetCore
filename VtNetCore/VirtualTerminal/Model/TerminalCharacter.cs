@@ -5,6 +5,8 @@
     /// </summary>
     public class TerminalCharacter
     {
+		public override string ToString() => GetType().Name + ": " + Char + "{" + Attributes + '}';
+
         /// <summary>
         /// The character to display
         /// </summary>

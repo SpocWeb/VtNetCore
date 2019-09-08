@@ -1,14 +1,25 @@
-﻿namespace VtNetCore.XTermParser
-{
-    using System;
-    using System.Linq;
-    using VtNetCore.Exceptions;
-    using VtNetCore.VirtualTerminal;
-    using VtNetCore.VirtualTerminal.Enums;
-    using VtNetCore.XTermParser.SequenceType;
+﻿using System;
+using System.Diagnostics;
+using System.Linq;
+using VtNetCore.Exceptions;
+using VtNetCore.VirtualTerminal;
+using VtNetCore.VirtualTerminal.Enums;
+using VtNetCore.XTermParser.SequenceType;
 
-    public static class XTermSequenceHandlers
+namespace VtNetCore.XTermParser
+{
+	public static class XTermSequenceHandlers
     {
+		public static string AsString(this TerminalSequence.Operator op) {
+			switch (op) {
+				case TerminalSequence.Operator.Query:  return "?";
+				case TerminalSequence.Operator.Send:   return ">";
+				case TerminalSequence.Operator.Bang:   return "!";
+				case TerminalSequence.Operator.Equals: return "=";
+				default:              return "";
+			}
+		}
+
         public static SequenceHandler[] Handlers =
         {
             new SequenceHandler
@@ -16,7 +27,7 @@
                 SequenceType = SequenceHandler.ESequenceType.Character,
                 Handler = (sequence, controller) =>
                 {
-                    var characterSequence = sequence as CharacterSequence;
+                    var characterSequence = (CharacterSequence) sequence;
                     switch(characterSequence.Character)
                     {
                         case '\n':
@@ -55,12 +66,15 @@
             new SequenceHandler
             {
                 SequenceType = SequenceHandler.ESequenceType.CharacterSet,
-                Handler = (sequence, controller) =>
-                    controller.SetCharacterSet(
-                        (sequence as CharacterSetSequence).CharacterSet,
-                        (sequence as CharacterSetSequence).Mode
-                        )
-            },
+                Handler = (sequence, controller) => {
+					var charSetSequence = (CharacterSetSequence) sequence;
+					controller.SetCharacterSet
+					(
+						charSetSequence.CharacterSet,
+						charSetSequence.Mode
+					);
+				}
+			},
             new SequenceHandler
             {
                 Description = "Save Cursor (DECSC)",
@@ -198,34 +212,34 @@
             {
                 Description = "DEC double-height line, top half (DECDHL).",
                 SequenceType = SequenceHandler.ESequenceType.CharacterSize,
-                Handler = (sequence, controller) => controller.SetCharacterSize((sequence as CharacterSizeSequence).Size)
+                Handler = (sequence, controller) => controller.SetCharacterSize(((CharacterSizeSequence) sequence).Size)
             },
             new SequenceHandler
             {
                 Description = "Set Text Parameters (Icon and Title)",
                 SequenceType = SequenceHandler.ESequenceType.OSC,
-                Param0 = new int [] { 0, 1, 2, 21 },
+                Param0 = new[] { 0, 1, 2, 21 },
                 Handler = (sequence, controller) => controller.SetWindowTitle(sequence.Command)
             },
             new SequenceHandler
             {
                 Description = "Change VT100 text foreground color to Pt.",
                 SequenceType = SequenceHandler.ESequenceType.OSC,
-                Param0 = new int [] { 10 },
+                Param0 = new[] { 10 },
                 Handler = (sequence, controller) => controller.SetRgbForegroundColor(sequence.Command)
             },
             new SequenceHandler
             {
                 Description = "Change VT100 text background color to Pt.",
                 SequenceType = SequenceHandler.ESequenceType.OSC,
-                Param0 = new int [] { 11 },
+                Param0 = new[] { 11 },
                 Handler = (sequence, controller) => controller.SetRgbBackgroundColor(sequence.Command)
             },
             new SequenceHandler
             {
                 Description = "Change VT100 text foreground color to Pt. (Query)",
                 SequenceType = SequenceHandler.ESequenceType.OSC,
-                Param0 = new int [] { 10 },
+                Param0 = new[] { 10 },
                 OscText = "?",
                 Handler = (sequence, controller) => controller.ReportRgbForegroundColor()
             },
@@ -233,7 +247,7 @@
             {
                 Description = "Change VT100 text background color to Pt. (Query)",
                 SequenceType = SequenceHandler.ESequenceType.OSC,
-                Param0 = new int [] { 11 },
+                Param0 = new[] { 11 },
                 OscText = "?",
                 Handler = (sequence, controller) => controller.ReportRgbBackgroundColor()
             },
@@ -266,24 +280,22 @@
                     controller.RepeatLastCharacter(sequence.Parameters[0]);
                 }
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Equals)
             {
                 Description = "Send Device Attributes (Tertiary DA).",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
-                Equal = true,
                 CsiCommand = "c",
                 ExactParameterCountOrDefault = 1,
-                Param0 = new int [] { 0 },
+                Param0 = new[] { 0 },
                 Handler = (sequence, controller) => controller.SendDeviceAttributesTertiary()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Send)
             {
                 Description = "Send Device Attributes (Secondary DA).",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
-                Send = true,
                 CsiCommand = "c",
                 ExactParameterCountOrDefault = 1,
-                Param0 = new int [] { 0 },
+                Param0 = new[] { 0 },
                 Handler = (sequence, controller) => controller.SendDeviceAttributesSecondary()
             },
             new SequenceHandler
@@ -292,7 +304,7 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "c",
                 ExactParameterCountOrDefault = 1,
-                Param0 = new int [] { 0 },
+                Param0 = new[] { 0 },
                 Handler = (sequence, controller) => controller.SendDeviceAttributes()
             },
             new SequenceHandler
@@ -341,7 +353,7 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "g",
                 ExactParameterCountOrDefault = 1,
-                Param0 = new int [] { 0 },
+                Param0 = new[] { 0 },
                 Handler = (sequence, controller) => controller.ClearTab()
             },
             new SequenceHandler
@@ -350,7 +362,7 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "g",
                 ExactParameterCount = 1,
-                Param0 = new int [] { 3 },
+                Param0 = new[] { 3 },
                 Handler = (sequence, controller) => controller.ClearTabs()
             },
             new SequenceHandler
@@ -369,7 +381,7 @@
                                 break;
 
                             case 4:     // Ps = 4  -> Insert Mode (IRM).
-                                controller.SetInsertReplaceMode(EInsertReplaceMode.Insert);
+                                controller.SetReplaceMode(false);
                                 break;
 
                             case 6:     // Ps = 6  -> Erasure Mode (ERM).
@@ -381,18 +393,17 @@
                                 break;
 
                             default:
-                                System.Diagnostics.Debug.WriteLine("Set Mode (SM) mode: " + parameter.ToString() + " is unknown");
+                                Debug.WriteLine("Set Mode (SM) mode: " + parameter.ToString() + " is unknown");
                                 break;
                         }
                     }
                 }
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "DEC Private Mode Set (DECSET).",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "h",
-                Query = true,
                 Handler = (sequence, controller) =>
                 {
                     foreach(var parameter in sequence.Parameters)
@@ -505,7 +516,7 @@
                                 break;
 
                             default:
-                                System.Diagnostics.Debug.WriteLine("DEC Private Mode Set (DECSET) mode: " + parameter.ToString() + " is unknown");
+                                Debug.WriteLine("DEC Private Mode Set (DECSET) mode: " + parameter.ToString() + " is unknown");
                                 break;
                         }
                     }
@@ -549,7 +560,7 @@
                                 break;
 
                             case 4:     // Ps = 4  -> Replace Mode (IRM).
-                                controller.SetInsertReplaceMode(EInsertReplaceMode.Replace);
+                                controller.SetReplaceMode(true);
                                 break;
 
                             case 6:     // Ps = 6  -> Erasure Mode (ERM).
@@ -561,18 +572,17 @@
                                 break;
 
                             default:
-                                System.Diagnostics.Debug.WriteLine("Reset Mode (RM) mode: " + parameter.ToString() + " is unknown");
+                                Debug.WriteLine("Reset Mode (RM) mode: " + parameter.ToString() + " is unknown");
                                 break;
                         }
                     }
                 }
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "DEC Private Mode Reset (DECRST).",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "l",
-                Query = true,
                 Handler = (sequence, controller) =>
                 {
                     foreach(var parameter in sequence.Parameters)
@@ -685,7 +695,7 @@
                                 break;
 
                             default:
-                                System.Diagnostics.Debug.WriteLine("Reset Mode (RM) mode: " + parameter.ToString() + " is unknown");
+                                Debug.WriteLine("Reset Mode (RM) mode: " + parameter.ToString() + " is unknown");
                                 break;
                         }
                     }
@@ -699,7 +709,7 @@
                 DefaultParamValue = 0,
                 Handler = (sequence, controller) =>
                 {
-                    var csiSequence = sequence as CsiSequence;
+                    var csiSequence = (CsiSequence) sequence;
                     if(csiSequence.Parameters.Count == 0)
                         controller.SetCharacterAttribute(0);
                     else if(csiSequence.Parameters[0] == 38 || csiSequence.Parameters[0] == 48)
@@ -728,7 +738,7 @@
                                 controller.SetIso8613PaletteBackground(csiSequence.Parameters[2]);
                         }
                         else
-                            System.Diagnostics.Debug.WriteLine("SGR " + csiSequence.Parameters[0].ToString() + " must be longer than 1 option");
+                            Debug.WriteLine("SGR " + csiSequence.Parameters[0].ToString() + " must be longer than 1 option");
                     }
                     else
                     {
@@ -743,7 +753,7 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "n",
                 ExactParameterCount = 1,
-                Param0 = new int [] { 5 },
+                Param0 = new[] { 5 },
                 Handler = (sequence, controller) => controller.DeviceStatusReport()
             },
             new SequenceHandler
@@ -752,24 +762,22 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "n",
                 ExactParameterCount = 1,
-                Param0 = new int [] { 6 },
+                Param0 = new[] { 6 },
                 Handler = (sequence, controller) => controller.ReportCursorPosition()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Device Status Report (DSR, DEC-specific). - Report Cursor Position",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "n",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 6 },
+                Param0 = new[] { 6 },
                 Handler = (sequence, controller) => controller.ReportExtendedCursorPosition()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Request DEC private mode (DECRQM).",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
-                Query = true,
                 CsiCommand = "$p",
                 ExactParameterCount = 1,
                 Handler = (sequence, controller) => controller.RequestDecPrivateMode(sequence.Parameters[0])
@@ -790,12 +798,11 @@
                         );
                 }
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Bang)
             {
                 Description = "Soft terminal reset (DECSTR).",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "p",
-                Bang = true,
                 Handler = (sequence, controller) => controller.FullReset()
             },
             new SequenceHandler
@@ -804,7 +811,7 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "\"q",
                 ExactParameterCountOrDefault = 1,
-                Param0 = new int [] { 0, 2 },
+                Param0 = new[] { 0, 2 },
                 Handler = (sequence, controller) => controller.ProtectCharacter(sequence.Parameters.Count == 0 ? 0 : sequence.Parameters[0])
             },
             new SequenceHandler
@@ -813,7 +820,7 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "\"q",
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1 },
+                Param0 = new[] { 1 },
                 Handler = (sequence, controller) => controller.ProtectCharacter(1)
             },
             new SequenceHandler
@@ -822,7 +829,7 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = " q",
                 ExactParameterCountOrDefault = 1,
-                Param0 = new int [] { 0, 1, 2, 3, 4, 5, 6 },
+                Param0 = new[] { 0, 1, 2, 3, 4, 5, 6 },
                 Handler = (sequence, controller) => {
                     var shape = ECursorShape.Block;
                     var blink = true;
@@ -879,64 +886,58 @@
                         controller.SetScrollingRegion(sequence.Parameters[0], sequence.Parameters[1]);
                 }
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Restore Cursor Keys",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "r",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1 },
+                Param0 = new[] { 1 },
                 Handler = (sequence, controller) => controller.RestoreCursorKeys()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Restore Normal Screen Buffer.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "r",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 47 },
+                Param0 = new[] { 47 },
                 Handler = (sequence, controller) => controller.RestoreEnableNormalBuffer()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Restore Hilite Mouse Tracking.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "r",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1001 },
+                Param0 = new[] { 1001 },
                 Handler = (sequence, controller) => controller.RestoreUseHighlightMouseTracking()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Restore use Hilite Mouse Tracking.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "r",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1002 },
+                Param0 = new[] { 1002 },
                 Handler = (sequence, controller) => controller.RestoreUseCellMotionMouseTracking()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Restore SGR Mouse Mode.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "r",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1006 },
+                Param0 = new[] { 1006 },
                 Handler = (sequence, controller) => controller.RestoreEnableSgrMouseMode()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Restore bracketed paste mode.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "r",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 2004 },
+                Param0 = new[] { 2004 },
                 Handler = (sequence, controller) => controller.RestoreBracketedPasteMode()
             },
             new SequenceHandler
@@ -951,72 +952,65 @@
                         controller.SetLeftAndRightMargins(sequence.Parameters[0], sequence.Parameters[1]);
                 }
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Save Cursor Keys",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "s",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1 },
+                Param0 = new[] { 1 },
                 Handler = (sequence, controller) => controller.SaveCursorKeys()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Save Normal Screen Buffer.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "s",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 47 },
+                Param0 = new[] { 47 },
                 Handler = (sequence, controller) => controller.SaveEnableNormalBuffer()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Save Hilite Mouse Tracking.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "s",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1001 },
+                Param0 = new[] { 1001 },
                 Handler = (sequence, controller) => controller.SaveUseHighlightMouseTracking()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Save use Hilite Mouse Tracking.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "s",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1002 },
+                Param0 = new[] { 1002 },
                 Handler = (sequence, controller) => controller.SaveUseCellMotionMouseTracking()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Save SGR Mouse Mode.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "s",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1006 },
+                Param0 = new[] { 1006 },
                 Handler = (sequence, controller) => controller.SaveEnableSgrMouseMode()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Save bracketed paste mode.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "s",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 2004 },
+                Param0 = new[] { 2004 },
                 Handler = (sequence, controller) => controller.SaveBracketedPasteMode()
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Window manipulation (from dtterm, as well as extensions by xterm).",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "t",
-                Query = false,
                 MinimumParameterCount = 1,
                 Handler = (sequence, controller) =>
                 {
@@ -1032,13 +1026,13 @@
                             if(sequence.Parameters.Count == 3)
                                 controller.XTermMoveWindow(sequence.Parameters[1], sequence.Parameters[2]);
                             else
-                                System.Diagnostics.Debug.WriteLine($"XTermMoveWindow needs 3 parameters {sequence.ToString()}");
+                                Debug.WriteLine($"XTermMoveWindow needs 3 parameters {sequence.ToString()}");
                             break;
                         case 4:
                             if(sequence.Parameters.Count == 3)
                                 controller.XTermResizeWindow(sequence.Parameters[2], sequence.Parameters[1]);
                             else
-                                System.Diagnostics.Debug.WriteLine($"XTermResizeWindow needs 3 parameters {sequence.ToString()}");
+                                Debug.WriteLine($"XTermResizeWindow needs 3 parameters {sequence.ToString()}");
                             break;
                         case 5:
                             controller.XTermRaiseToFront();
@@ -1053,7 +1047,7 @@
                             if(sequence.Parameters.Count == 3)
                                 controller.XTermResizeTextArea(sequence.Parameters[1], sequence.Parameters[2]);
                             else
-                                System.Diagnostics.Debug.WriteLine($"XTermResizeTextArea needs 3 parameters {sequence.ToString()}");
+                                Debug.WriteLine($"XTermResizeTextArea needs 3 parameters {sequence.ToString()}");
                             break;
                         case 9:
                             if(sequence.Parameters.Count >= 2)
@@ -1073,12 +1067,12 @@
                                         controller.XTermMaximizeWindow(true, false);
                                         break;
                                     default:
-                                        System.Diagnostics.Debug.WriteLine($"Unknown window maximize mode operation {sequence.ToString()}");
+                                        Debug.WriteLine($"Unknown window maximize mode operation {sequence.ToString()}");
                                         break;
                                 }
                             }
                             else
-                                System.Diagnostics.Debug.WriteLine($"Window maximize mode operation requires 2 parameters {sequence.ToString()}");
+                                Debug.WriteLine($"Window maximize mode operation requires 2 parameters {sequence.ToString()}");
                             break;
                         case 10:
                             if(sequence.Parameters.Count >= 2)
@@ -1095,12 +1089,12 @@
                                         controller.XTermFullScreenToggle();
                                         break;
                                     default:
-                                        System.Diagnostics.Debug.WriteLine($"Unknown full screen mode operation {sequence.ToString()}");
+                                        Debug.WriteLine($"Unknown full screen mode operation {sequence.ToString()}");
                                         break;
                                 }
                             }
                             else
-                                System.Diagnostics.Debug.WriteLine($"Window full screen mode operation requires 2 parameters {sequence.ToString()}");
+                                Debug.WriteLine($"Window full screen mode operation requires 2 parameters {sequence.ToString()}");
                             break;
                         case 11:
                         case 13:
@@ -1129,12 +1123,12 @@
                                         controller.PushXTermWindowTitle();
                                         break;
                                     default:
-                                        System.Diagnostics.Debug.WriteLine($"Unknown save window title or icon sequence {sequence.ToString()}");
+                                        Debug.WriteLine($"Unknown save window title or icon sequence {sequence.ToString()}");
                                         break;
                                 }
                             }
                             else
-                                System.Diagnostics.Debug.WriteLine($"XTerm Icon/Title operation requires 2 parameters {sequence.ToString()}");
+                                Debug.WriteLine($"XTerm Icon/Title operation requires 2 parameters {sequence.ToString()}");
                             break;
                         case 23:
                             if(sequence.Parameters.Count >= 2)
@@ -1152,19 +1146,19 @@
                                         controller.PopXTermWindowTitle();
                                         break;
                                     default:
-                                        System.Diagnostics.Debug.WriteLine($"Unknown restore window title or icon sequence {sequence.ToString()}");
+                                        Debug.WriteLine($"Unknown restore window title or icon sequence {sequence.ToString()}");
                                         break;
                                 }
                             }
                             else
-                                System.Diagnostics.Debug.WriteLine($"XTerm Icon/Title operation requires 2 parameters {sequence.ToString()}");
+                                Debug.WriteLine($"XTerm Icon/Title operation requires 2 parameters {sequence.ToString()}");
                             break;
                         case 24:
                             // TODO : Consider just ignoring this feature... I can't imagine it being overly useful.
-                            System.Diagnostics.Debug.WriteLine($"(Not implemented) Resize to Ps lines (DECSLPP) {sequence.ToString()}");
+                            Debug.WriteLine($"(Not implemented) Resize to Ps lines (DECSLPP) {sequence.ToString()}");
                             break;
                         default:
-                            System.Diagnostics.Debug.WriteLine($"Unknown DTTerm/XTerm window manipulation sequence {sequence.ToString()}");
+                            Debug.WriteLine($"Unknown DTTerm/XTerm window manipulation sequence {sequence.ToString()}");
                             break;
                     }
                 }
@@ -1290,7 +1284,7 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "J",
                 ExactParameterCountOrDefault = 1,
-                Param0 = new int [] { 0 },
+                Param0 = new[] { 0 },
                 Handler = (sequence, controller) => controller.EraseBelow(true)
             },
             new SequenceHandler
@@ -1299,7 +1293,7 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "J",
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1 },
+                Param0 = new[] { 1 },
                 Handler = (sequence, controller) => controller.EraseAbove(true)
             },
             new SequenceHandler
@@ -1308,37 +1302,34 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "J",
                 ExactParameterCount = 1,
-                Param0 = new int [] { 2 },
+                Param0 = new[] { 2 },
                 Handler = (sequence, controller) => controller.EraseAll(true)
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Erase in Display (DECSED). - Ps = 0  -> Selective Erase Below (default).",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "J",
                 ExactParameterCountOrDefault = 1,
-                Query = true,
-                Param0 = new int [] { 0 },
+                Param0 = new[] { 0 },
                 Handler = (sequence, controller) => controller.EraseBelow(false)
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Erase in Display (DECSED). - Ps = 1  -> Selective Erase Above.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "J",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1 },
+                Param0 = new[] { 1 },
                 Handler = (sequence, controller) => controller.EraseAbove(false)
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Erase in Display (DECSED). - Ps = 2  -> Selective Erase All.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "J",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 2 },
+                Param0 = new[] { 2 },
                 Handler = (sequence, controller) => controller.EraseAll(false)
             },
             new SequenceHandler
@@ -1347,7 +1338,7 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "K",
                 ExactParameterCountOrDefault = 1,
-                Param0 = new int [] { 0 },
+                Param0 = new[] { 0 },
                 Handler = (sequence, controller) => controller.EraseToEndOfLine(true)
             },
             new SequenceHandler
@@ -1356,7 +1347,7 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "K",
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1 },
+                Param0 = new[] { 1 },
                 Handler = (sequence, controller) => controller.EraseToStartOfLine(true)
             },
             new SequenceHandler
@@ -1365,37 +1356,34 @@
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "K",
                 ExactParameterCount = 1,
-                Param0 = new int [] { 2 },
+                Param0 = new[] { 2 },
                 Handler = (sequence, controller) => controller.EraseLine(true)
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Erase in Line (DECSEL). - Ps = 0  -> Selective Erase to Right (default).",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "K",
-                Query = true,
                 ExactParameterCountOrDefault = 1,
-                Param0 = new int [] { 0 },
+                Param0 = new[] { 0 },
                 Handler = (sequence, controller) => controller.EraseToEndOfLine(false)
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Erase in Line (DECSEL). - Ps = 1  -> Selective Erase to Left.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "K",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 1 },
+                Param0 = new[] { 1 },
                 Handler = (sequence, controller) => controller.EraseToStartOfLine(false)
             },
-            new SequenceHandler
+            new SequenceHandler(TerminalSequence.Operator.Query)
             {
                 Description = "Erase in Line (DECSEL). - Ps = 2  -> Selective Erase All.",
                 SequenceType = SequenceHandler.ESequenceType.CSI,
                 CsiCommand = "K",
-                Query = true,
                 ExactParameterCount = 1,
-                Param0 = new int [] { 2 },
+                Param0 = new[] { 2 },
                 Handler = (sequence, controller) => controller.EraseLine(false)
             },
             new SequenceHandler
@@ -1665,7 +1653,7 @@
                 SequenceType = SequenceHandler.ESequenceType.VT52mc,
                 Handler = (sequence, controller) =>
                 {
-                    var vt52Sequence = sequence as Vt52MoveCursorSequence;
+                    var vt52Sequence = (Vt52MoveCursorSequence) sequence;
                     controller.SetCursorPosition(vt52Sequence.Column + 1, vt52Sequence.Row + 1);
                 }
             },
@@ -1676,7 +1664,7 @@
                 CsiCommand = "Z",
                 Handler = (sequence, controller) => controller.Vt52Identify(),
                 Vt52 = SequenceHandler.Vt52Mode.Yes
-            },
+            }
         };
 
         public static void ProcessSequence(TerminalSequence sequence, IVirtualTerminalController controller)
@@ -1694,14 +1682,11 @@
 
             if (sequence is CsiSequence)
             {
-                var handler = Handlers
+                var handlers = Handlers
                     .Where(x =>
                         x.SequenceType == SequenceHandler.ESequenceType.CSI &&
                         x.CsiCommand == sequence.Command &&
-                        x.Query == sequence.IsQuery &&
-                        x.Send == sequence.IsSend &&
-                        x.Equal == sequence.IsEquals &&
-                        x.Bang == sequence.IsBang &&
+                        x.Op == sequence.Op &&
                         (
                             (
                                 x.Param0.Length == 0 && 
@@ -1743,11 +1728,12 @@
                             )
                         )
                     )
-                    .SingleOrDefault();
+                    .ToList();
 
-                if (handler == null)
-                    throw new Exception("There are no CsiSequence handlers configured for sequence: " + sequence.ToString());
+                if (handlers.Count != 1)
+                    throw new Exception("There are no CsiSequence handlers configured for sequence: " + sequence);
 
+				var handler = handlers[0];
                 // This is necessary since the default value is contextual
                 if(sequence.Parameters != null)
                 {
@@ -1788,7 +1774,7 @@
                 }
 
                 if (handler == null)
-                    throw new Exception("There are no sequence handlers configured for type OscSequence with param0 = " + sequence.Parameters[0].ToString());
+                    throw new Exception("There are no sequence handlers configured for type OscSequence with param0 = " + sequence.Parameters[0]);
 
                 handler.Handler(sequence, controller);
 
@@ -1799,7 +1785,7 @@
             {
                 var handler = Handlers.Where(x => x.SequenceType == SequenceHandler.ESequenceType.CharacterSet).SingleOrDefault();
                 if (handler == null)
-                    throw new EscapeSequenceException("There are no sequence handlers configured for type CharacterSetSequence " + sequence.ToString(), sequence);
+                    throw new EscapeSequenceException("There are no sequence handlers configured for type CharacterSetSequence " + sequence, sequence);
 
                 handler.Handler(sequence, controller);
 
@@ -1813,14 +1799,14 @@
                         x.SequenceType == SequenceHandler.ESequenceType.Escape &&
                         x.CsiCommand == sequence.Command &&
                         (
-                            x.Vt52 == SequenceHandler.Vt52Mode.Irrelevent ||
+                            x.Vt52 == SequenceHandler.Vt52Mode.Irrelevant ||
                             x.Vt52 == (controller.IsVt52Mode() ? SequenceHandler.Vt52Mode.Yes : SequenceHandler.Vt52Mode.No)
                         )
                     )
                     .SingleOrDefault();
 
                 if (handler == null)
-                    throw new EscapeSequenceException("There are no sequence handlers configured for type EscapeSequence " + sequence.ToString(), sequence);
+                    throw new EscapeSequenceException("There are no sequence handlers configured for type EscapeSequence " + sequence, sequence);
 
                 handler.Handler(sequence, controller);
 
@@ -1831,7 +1817,7 @@
             {
                 var handler = Handlers.Where(x => x.SequenceType == SequenceHandler.ESequenceType.CharacterSize).SingleOrDefault();
                 if (handler == null)
-                    throw new EscapeSequenceException("There are no sequence handlers configured for type CharacterSizeSequence " + sequence.ToString(), sequence);
+                    throw new EscapeSequenceException("There are no sequence handlers configured for type CharacterSizeSequence " + sequence, sequence);
 
                 handler.Handler(sequence, controller);
 
@@ -1848,7 +1834,7 @@
                     .SingleOrDefault();
 
                 if (handler == null)
-                    throw new EscapeSequenceException("There are no sequence handlers configured for type UnicodeSequence " + sequence.ToString(), sequence);
+                    throw new EscapeSequenceException("There are no sequence handlers configured for type UnicodeSequence " + sequence, sequence);
 
                 handler.Handler(sequence, controller);
 
@@ -1877,7 +1863,7 @@
                     .SingleOrDefault();
 
                 if (handler == null)
-                    throw new Exception("There are no sequence handlers configured for type DcsSequence with param0 = " + sequence.Parameters[0].ToString());
+                    throw new Exception("There are no sequence handlers configured for type DcsSequence with param0 = " + sequence.Parameters[0]);
 
                 handler.Handler(sequence, controller);
 
@@ -1896,11 +1882,9 @@
                     throw new Exception("There are no sequence handlers configured for type Vt52MoveCursorSequence");
 
                 handler.Handler(sequence, controller);
+			}
 
-                return;
-            }
-
-            System.Diagnostics.Debug.WriteLine("Unhandled sequence -> " + sequence.ToString());
+            Debug.WriteLine("Unhandled sequence -> " + sequence);
         }
     }
 }

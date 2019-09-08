@@ -1,9 +1,10 @@
-﻿namespace VtNetCore.VirtualTerminal
-{
-    using System.Collections.Generic;
-    using VtNetCore.VirtualTerminal.Model;
+﻿using System.Collections.Generic;
+using VtNetCore.VirtualTerminal.Layout;
+using VtNetCore.VirtualTerminal.Model;
 
-    /// <summary>
+namespace VtNetCore.VirtualTerminal
+{
+	/// <summary>
     /// 
     /// </summary>
     public class VirtualTerminalViewPort
@@ -101,7 +102,7 @@
         /// <param name="width">The fixed width of the screen. If this is less than 1, then no right padding will be applied</param>
         /// <param name="invertedRange">Specifies the range to invert. This is so that text selection can be handled.</param>
         /// <returns>A list of rows and spans for painting</returns>
-        public List<Layout.LayoutRow> GetPageSpans(int startingLine, int lineCount, int width = -1, TextRange invertedRange = null)
+        public List<LayoutRow> GetPageSpans(int startingLine, int lineCount, int width = -1, TextRange invertedRange = null)
         {
             return Parent.GetPageSpans(startingLine, lineCount, width, invertedRange);
         }

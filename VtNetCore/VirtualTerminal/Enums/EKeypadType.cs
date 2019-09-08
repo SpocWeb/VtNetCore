@@ -2,7 +2,7 @@
 {
     public enum EKeypadType
     {
-        Normal,
-        Application,
+        Normal = '>',
+        Application = '='
     }
 }

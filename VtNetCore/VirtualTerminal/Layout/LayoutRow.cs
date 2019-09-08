@@ -1,10 +1,8 @@
-﻿namespace VtNetCore.VirtualTerminal.Layout
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
+﻿using System.Collections.Generic;
 
-    public class LayoutRow
+namespace VtNetCore.VirtualTerminal.Layout
+{
+	public class LayoutRow
     {
         public int LogicalRowNumber { get; set; }
         public bool DoubleWidth { get; set; }

@@ -1,10 +1,11 @@
-﻿namespace VtNetCore.XTermParser
-{
-    using System;
-    using System.Text;
-    using VtNetCore.VirtualTerminal;
+﻿using System;
+using System.Diagnostics;
+using System.Text;
+using VtNetCore.VirtualTerminal;
 
-    /// <summary>
+namespace VtNetCore.XTermParser
+{
+	/// <summary>
     /// Consumes pushed data, parses it and processes it through the virtual terminal controller
     /// </summary>
     public class DataConsumer
@@ -41,21 +42,6 @@
             Controller = controller;
         }
 
-		public void WriteLine(string text) 
-		{
-			Write(text + Environment.NewLine);
-		}
-
-		public void Write(string text, int start, int length) 
-		{
-			Push(Encoding.UTF8.GetBytes(text.ToCharArray(), start, length));
-		}
-
-		public void Write(string text) 
-		{
-			Push(Encoding.UTF8.GetBytes(text));
-		}
-
         /// <summary>
         /// Consume raw byte data, parse it and then process it through the controller.
         /// </summary>
@@ -76,11 +62,11 @@
                 {
                     if (SequenceDebugging && ResumingStarvedBuffer)
                     {
-                        System.Diagnostics.Debug.WriteLine("Resuming from starved buffer [" + Encoding.UTF8.GetString(InputBuffer.Buffer).Replace("\u001B", "<esc>") + "]");
+                        Debug.WriteLine("Resuming from starved buffer [" + Encoding.UTF8.GetString(InputBuffer.Buffer).Replace("\u001B", "<esc>") + "]");
                         ResumingStarvedBuffer = false;
                     }
 
-                    var sequence = XTermSequenceReader.ConsumeNextSequence(InputBuffer, Controller.IsUtf8());
+                    var sequence = InputBuffer.ConsumeNextSequence(Controller.IsUtf8());
 
                     // Handle poorly injected sequences
                     if (sequence.ProcessFirst != null)
@@ -88,14 +74,14 @@
                         foreach (var item in sequence.ProcessFirst)
                         {
                             if (SequenceDebugging)
-                                System.Diagnostics.Debug.WriteLine(item.ToString());
+                                Debug.WriteLine(item.ToString());
 
                             XTermSequenceHandlers.ProcessSequence(item, Controller);
                         }
                     }
 
                     if (SequenceDebugging)
-                        System.Diagnostics.Debug.WriteLine(sequence.ToString());
+                        Debug.WriteLine(sequence.ToString());
 
                     XTermSequenceHandlers.ProcessSequence(sequence, Controller);
                 }
@@ -107,7 +93,7 @@
                 }
                 catch (ArgumentException e)
                 {
-                    System.Diagnostics.Debug.WriteLine("Argument exception : " + e.ToString());
+                    Debug.WriteLine("Argument exception : " + e);
                     // We've reached an invalid state of the stream.
                     InputBuffer.ReadRaw();
                     InputBuffer.Commit();
@@ -116,7 +102,7 @@
                 {
                     // This is less than attractive, but until such time as the code is considered highly
                     // reliable, this is the gateway for where nearly all crashes will be caught.
-                    System.Diagnostics.Debug.WriteLine("Unknown exception " + e.Message);
+                    Debug.WriteLine("Unknown exception " + e.Message);
                 }
             }
 

@@ -6,5 +6,8 @@
         {
             return "ESC - " + base.ToString();
         }
-    }
+
+		public EscapeSequence() : base(0) { }
+
+	}
 }
