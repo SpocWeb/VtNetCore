@@ -5,11 +5,44 @@ using VtNetCore.VirtualTerminal.Enums;
 
 namespace VtNetCore.VirtualTerminal
 {
+	/// <summary> Adapter for .NET Core <see cref="Console"/> to enable e.g. colored Output </summary>
+	/// <remarks>
+	/// Console exposes only few Terminal Features.
+	/// Windows 10 sports a Terminal Mode which has to be activated using Win API though.
+	/// There is a new MS Project: Windows Terminal which breaks the cmd.exe Behavior
+	/// https://github.com/microsoft/terminal 
+	/// </remarks>
+	/// <example>
+	/// <code>
+	/// var dataLoop = new DataConsumer(new ConsoleTerminal()); 
+	/// dataLoop.WriteLine("\x1b[36mTEST\x1b[0m");
+	/// 
+	/// </code>
+	/// </example>
 	public class ConsoleTerminal : IVirtualTerminalController {
 
+		readonly List<int> _Tabs = new List<int>();
+		public ConsoleColor BackgroundColor = ConsoleColor.Black;
+
+		public ConsoleColor ForegroundColor = ConsoleColor.White;
+		public IReadOnlyList<int> Tabs => _Tabs;
+
+		public int CursorX { get; private set; }
+		public int CursorY { get; private set; }
+
+		public int Width { get; private set; }
+		public int Height { get; private set; }
+
+		public int Top { get; private set; }
+		public int Left { get; private set; }
+
+		public char LastChar { get; private set; }
 		public void SetWindowTitle(string title) => Console.Title = title;
 
-		public void ClearChanges() => Console.Clear();
+		public void SetX10SendMouseXYOnButton(bool enabled) { }
+		public void SetX11SendMouseXYOnButton(bool enabled) { }
+
+		public void ClearChanges() { } //Console.Clear(); }
 
 		public bool IsUtf8() => Encoding.UTF8.Equals(Console.OutputEncoding);
 		public void SetUTF8() => Console.OutputEncoding = Encoding.UTF8;
@@ -17,30 +50,13 @@ namespace VtNetCore.VirtualTerminal
 
 		public bool IsVt52Mode() => false;
 
-		void PutChar(char chr, int count) {
-			LastChar = chr;
-			for (int i = count; --i >= 0;) {
-				Console.Write(chr);
-			}
-		}
-
 		public void Tab() => PutChar('\t');
+
 		public void VerticalTab() => PutChar('\f');
 
-		readonly List<int> _Tabs = new List<int>();
-		public IReadOnlyList<int> Tabs => _Tabs;
 		public void ClearTab() => _Tabs.Remove(CursorX);
 		public void ClearTabs() => _Tabs.Clear();
 		public void TabSet()  => _Tabs.Add(CursorX);
-
-		public int CursorX { get; private set; }
-		public int CursorY { get; private set; }
-
-		public void ShowCursor(bool show) => Console.CursorVisible = show;
-		public void MoveCursorRelative(int x, int y) {
-			Console.CursorLeft += x;
-			Console.CursorTop += y;
-		}
 
 		public void SaveCursor() {
 			CursorX = Console.CursorLeft;
@@ -50,6 +66,13 @@ namespace VtNetCore.VirtualTerminal
 		public void RestoreCursor() {
 			Console.CursorLeft = CursorX;
 			Console.CursorTop  = CursorY;
+		}
+
+		public void ShowCursor(bool show) => Console.CursorVisible = show;
+
+		public void MoveCursorRelative(int x, int y) {
+			Console.CursorLeft += x;
+			Console.CursorTop += y;
 		}
 
 		public void SetCursorPosition(int column, int row) {
@@ -62,22 +85,8 @@ namespace VtNetCore.VirtualTerminal
 			//Need Windows.Cursor DLL to control blinking 
 		}
 
-		static int AsCursorSize(ECursorShape shape) {
-			switch (shape) {
-				case ECursorShape.Block:     return 100;
-				case ECursorShape.Underline: return 10;
-				case ECursorShape.Bar:       return 30;
-				default:                     throw new ArgumentOutOfRangeException(nameof(shape), shape, null);
-			}
-		}
-
-		public int Width { get; private set; }
-		public int Height { get; private set; }
-
-		public int Top { get; private set; }
-		public int Left { get; private set; }
-
 		public void XTermDeiconifyWindow() => Console.SetWindowSize(Width, Height);
+
 		public void XTermIconifyWindow() => Console.SetWindowSize(0, 0);
 
 		public void XTermFullScreenToggle() => XTermMaximizeWindow(true, true);
@@ -184,17 +193,10 @@ namespace VtNetCore.VirtualTerminal
 		public void EraseAbove(bool ignoreProtected) { }
 		public void EraseBelow(bool ignoreProtected) { }
 
-		public void EraseCharacter(int count) {
-		}
-		public void EraseLine(bool ignoreProtected) {
-		}
-		public void EraseToEndOfLine(bool ignoreProtected) {
-		}
-		public void EraseToStartOfLine(bool ignoreProtected) {
-		}
-
-		public ConsoleColor ForegroundColor = ConsoleColor.White;
-		public ConsoleColor BackgroundColor = ConsoleColor.Black;
+		public void EraseCharacter(int count) { }
+		public void EraseLine(bool ignoreProtected) { }
+		public void EraseToEndOfLine(bool ignoreProtected) { }
+		public void EraseToStartOfLine(bool ignoreProtected) { }
 
 		public void FullReset() {
 			Console.ForegroundColor = ForegroundColor;
@@ -210,7 +212,6 @@ namespace VtNetCore.VirtualTerminal
 		public void PushXTermWindowIcon() { }
 		public void PushXTermWindowTitle() { }
 
-		public char LastChar { get; private set; }
 		public void PutChar(char character) => Console.Write(LastChar = character);
 		public void PutG2Char(char character) => PutChar(character);
 		public void PutG3Char(char character) => PutChar(character);
@@ -223,55 +224,36 @@ namespace VtNetCore.VirtualTerminal
 		public void ReportCursorPosition() {
 			//TODO: write the Position to the Console. Input Stream Buffer;
 		}
-		public void ReportExtendedCursorPosition() {
-		}
-		public void ReportRgbBackgroundColor() {
-		}
-		public void ReportRgbForegroundColor() {
-		}
 
-		public void RestoreEnableNormalBuffer() {
-		}
-		public void RestoreEnableSgrMouseMode() {
-		}
-		public void RestoreUseCellMotionMouseTracking() {
-		}
-		public void RestoreUseHighlightMouseTracking() {
-		}
-		public void RestoreBracketedPasteMode() {
-		}
-		public void RestoreCursorKeys() {
-		}
-		public void ReverseIndex() {
-		}
-		public void ReverseTab() {
-		}
+		public void ReportExtendedCursorPosition() { }
+		public void ReportRgbBackgroundColor() { }
+		public void ReportRgbForegroundColor() { }
 
-		public void SetAutomaticNewLine(bool enable) {
-		}
+		public void RestoreEnableNormalBuffer() { }
+		public void RestoreEnableSgrMouseMode() { }
+		public void RestoreUseCellMotionMouseTracking() { }
+		public void RestoreUseHighlightMouseTracking() { }
+		public void RestoreBracketedPasteMode() { }
+		public void RestoreCursorKeys() { }
+		public void ReverseIndex() { }
+		public void ReverseTab() { }
 
-		public void SaveBracketedPasteMode() {
-		}
+		public void SetAutomaticNewLine(bool enable) { }
 
-		public void SaveCursorKeys() {
-		}
+		public void SaveBracketedPasteMode() { }
 
-		public void SaveEnableNormalBuffer() {
-		}
+		public void SaveCursorKeys() { }
 
-		public void SaveEnableSgrMouseMode() {
-		}
+		public void SaveEnableNormalBuffer() { }
 
-		public void SaveUseCellMotionMouseTracking() {
-		}
+		public void SaveEnableSgrMouseMode() { }
 
-		public void SaveUseHighlightMouseTracking() {
-		}
+		public void SaveUseCellMotionMouseTracking() { }
 
-		public void Scroll(int rows) {
-		}
-		public void ScrollAcross(int columns) {
-		}
+		public void SaveUseHighlightMouseTracking() { }
+
+		public void Scroll(int rows) { }
+		public void ScrollAcross(int columns) { }
 
 		public void SendDeviceAttributes() { }
 		public void SendDeviceAttributesSecondary() { }
@@ -290,22 +272,22 @@ namespace VtNetCore.VirtualTerminal
 		public void SetEndOfGuardedArea() { }
 		public void SetErasureMode(bool enabled) { }
 		public void SetGuardedAreaTransferMode(bool enabled) { }
+
+		public void SetInsertReplaceMode(EInsertReplaceMode mode) { }
 		public void SetReplaceMode(bool isReplaceMode) { }
 
 		public void SetIso8613PaletteBackground(int paletteEntry) { }
 		public void SetIso8613PaletteForeground(int paletteEntry) { }
 
-		public void SetLeftAndRightMargins(int left, int right) {
-		}
+		public void SetLeftAndRightMargins(int left, int right) { }
 
-		public void SetKeypadType(EKeypadType type) {
-		}
+		public void SetKeypadType(EKeypadType type) { }
 
 		public void SetRgbBackgroundColor(int red, int green, int blue) {
-			//Console.BackgroundColor = ;
+			//Console.BackgroundColor = ; supports only 8 dark and 8 bright colors...
 		}
 		public void SetRgbBackgroundColor(string xParseColor) {
-			//Console.BackgroundColor = ;
+			//Console.BackgroundColor = ; TODO: ...could try to find the closest Match
 		}
 		public void SetRgbForegroundColor(int red, int green, int blue) {
 			//Console.ForegroundColor = ;
@@ -314,62 +296,45 @@ namespace VtNetCore.VirtualTerminal
 			//Console.ForegroundColor = ;
 		}
 
-		public void SetScrollingRegion(int top, int bottom) {
-		}
+		public void SetScrollingRegion(int top, int bottom) { }
 
-		public void SetSendFocusInAndFocusOutEvents(bool enabled) {
-		}
+		public void SetSendFocusInAndFocusOutEvents(bool enabled) { }
 
-		public void SetStartOfGuardedArea() {
-		}
+		public void SetStartOfGuardedArea() { }
 
-		public void SetUseAllMouseTracking(bool enabled) {
-		}
+		public void SetUseAllMouseTracking(bool enabled) { }
 
-		public void SetUtf8MouseMode(bool enabled) {
-		}
+		public void SetUtf8MouseMode(bool enabled) { }
 
-		public void SetVt52AlternateKeypadMode(bool enabled) {
-		}
+		public void SetVt52AlternateKeypadMode(bool enabled) { }
 
-		public void SetVt52GraphicsMode(bool enabled) {
-		}
+		public void SetVt52GraphicsMode(bool enabled) { }
 
-		public void SetVt52Mode(bool enabled) {
-		}
+		public void SetVt52Mode(bool enabled) { }
 
-		public void SetX10SendMouseXYOnButton(bool enabled) {
-		}
+		public void SetX10SendMouseXyOnButton(bool enabled) { }
 
-		public void SetX11SendMouseXYOnButton(bool enabled) {
-		}
+		public void SetX11SendMouseXyOnButton(bool enabled) { }
 
-		public void ShiftIn() {
-		}
+		public void ShiftIn() { }
 
-		public void ShiftOut() {
-		}
+		public void ShiftOut() { }
 
-		public void SingleShiftSelectG2() {
-		}
+		public void SingleShiftSelectG2() { }
 
 		public void SingleShiftSelectG3() {
 			//Console.;
 		}
 
-		public void UseCellMotionMouseTracking(bool enable) {
-		}
+		public void UseCellMotionMouseTracking(bool enable) { }
 
-		public void UseHighlightMouseTracking(bool enable) {
-		}
+		public void UseHighlightMouseTracking(bool enable) { }
 
 
-		public void Vt52EnterAnsiMode() {
-		}
+		public void Vt52EnterAnsiMode() { }
 
 
-		public void Vt52Identify() {
-		}
+		public void Vt52Identify() { }
 
 		public void XTermLowerToBottom() {
 			//Console.;
@@ -383,11 +348,26 @@ namespace VtNetCore.VirtualTerminal
 			//Console.;
 		}
 
-		public void XTermReport(XTermReportType reportType) {
+		public void XTermReport(XTermReportType reportType) { }
+
+		public void XTermResizeTextArea(int columns, int rows) { }
+
+		void PutChar(char chr, int count) {
+			LastChar = chr;
+			for (var i = count; --i >= 0;) {
+				Console.Write(chr);
+			}
 		}
 
-		public void XTermResizeTextArea(int columns, int rows) {
+		static int AsCursorSize(ECursorShape shape) {
+			switch (shape) {
+				case ECursorShape.Block:     return 100;
+				case ECursorShape.Underline: return 10;
+				case ECursorShape.Bar:       return 30;
+				default:                             throw new ArgumentOutOfRangeException(nameof(shape), shape, null);
+			}
 		}
 
 	}
+
 }
