@@ -72,7 +72,7 @@ namespace VtNetCore.JavaScript.Tests
         VirtualTerminalController Controller;
         DataConsumer Consumer;
 
-        private byte[] SendBuffer = new byte[0];
+		byte[] SendBuffer = new byte[0];
 
         public Terminal()
         {
@@ -83,7 +83,7 @@ namespace VtNetCore.JavaScript.Tests
             Controller.SendData += TerminalSendDataEvent;
         }
 
-        private void TerminalSendDataEvent(object sender, SendDataEventArgs e)
+		void TerminalSendDataEvent(object sender, SendDataEventArgs e)
         {
             SendBuffer = SendBuffer.Concat(e.Data).ToArray();
         }
@@ -161,7 +161,8 @@ namespace VtNetCore.JavaScript.Tests
 
     class TestRunner
     {
-        private V8ScriptEngine Engine;
+
+		V8ScriptEngine Engine;
 
         public TestRunner()
         {
